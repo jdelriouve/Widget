@@ -23,7 +23,7 @@ const actions = {
         }
       },
       async getMarketProductSku({ commit }, data) {
-        let endPoint = "/api/v1/market-product/" + data;
+        let endPoint = "/api/v1/open-market-product/" + data;
         try {
           const response = await HTTP.get(endPoint);
           const isError = response instanceof Error;

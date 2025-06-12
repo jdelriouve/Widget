@@ -1,6 +1,6 @@
 <template>
   <div class="widget-wrapper">
-    <QuotaWidget :sku="sku" />
+    <QuotaWidget :sku="sku" :price="price"/>
   </div>
 </template>
 
@@ -11,7 +11,11 @@ defineProps({
   sku: {
     type: String,
     required: true
-  }
+  },
+  price: {
+    type: Number,
+    required: true
+  },
 })
 </script>
 

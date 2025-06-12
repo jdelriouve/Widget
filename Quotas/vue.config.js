@@ -4,13 +4,17 @@ const { VuetifyPlugin } = require('webpack-plugin-vuetify')
 module.exports = defineConfig({
   publicPath: './',
   lintOnSave: false,
-  transpileDependencies: [
-    'vuetify'
-  ],
+  transpileDependencies: ['vuetify'],
   configureWebpack: {
-    devtool: 'source-map', // Habilitar mapas de fuente para depuración
+    devtool: 'source-map',
     optimization: {
-      splitChunks: false, // Deshabilitar la división de chunks
+      splitChunks: false,
+    },
+    output: {
+      filename: 'product.js', // Nombre del bundle final
+      library: 'widget',      // Nombre del objeto global en window
+      libraryTarget: 'window',
+      libraryExport: 'default',
     },
     plugins: [
       new VuetifyPlugin()

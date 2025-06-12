@@ -1,55 +1,65 @@
 <template>
   <div class="renting-sdk-container">
-    <div class="renting-sdk-customer-type-toggle">
-      <div class="renting-sdk-toggle-wrapper" :class="{ 'renting-sdk-single': !showEmpresa || !showParticular }">
-        <template v-if="showEmpresa && showParticular">
-          <button class="renting-sdk-toggle-btn" :class="{ 'renting-sdk-active': customerType === 'empresa' }" @click="customerType = 'empresa'">
-            Empresa
-          </button>
-          <button class="renting-sdk-toggle-btn" :class="{ 'renting-sdk-active': customerType === 'particular' }"
-            @click="customerType = 'particular'">
-            Particular
-          </button>
-        </template>
-        <template v-else>
-          <button class="renting-sdk-toggle-btn renting-sdk-active" disabled>
-            {{ showEmpresa ? 'Empresa' : 'Particular' }}
-          </button>
-        </template>
-      </div>
-    </div>
-
-    <div class="renting-sdk-duration-selector">
-      <div class="renting-sdk-duration-title">
-        <h3>Elige la duración de tu renting (en meses):</h3>
+    <template v-if="(showEmpresa || showParticular) && showProduct">
+      <div class="renting-sdk-customer-type-toggle">
+        <div class="renting-sdk-toggle-wrapper" :class="{ 'renting-sdk-single': !showEmpresa || !showParticular }">
+          <template v-if="showEmpresa && showParticular">
+            <button class="renting-sdk-toggle-btn" :class="{ 'renting-sdk-active': customerType === 'empresa' }"
+              @click="customerType = 'empresa'">
+              Empresa
+            </button>
+            <button class="renting-sdk-toggle-btn" :class="{ 'renting-sdk-active': customerType === 'particular' }"
+              @click="customerType = 'particular'">
+              Particular
+            </button>
+          </template>
+          <template v-else>
+            <button class="renting-sdk-toggle-btn renting-sdk-active" disabled>
+              {{ showEmpresa ? 'Empresa' : 'Particular' }}
+            </button>
+          </template>
+        </div>
       </div>
 
-      <div class="renting-sdk-content-wrapper">
-        <div class="renting-sdk-months-container">
-          <VChipGroup v-model="selectedMonth" class="renting-sdk-months-chip-group" mandatory>
-            <template v-for="(option, i) in chipOptions" :key="i">
-              <div class="renting-sdk-chip-wrapper">
-                <VChip :value="option" class="renting-sdk-month-chip"
-                  :class="{ 'renting-sdk-chip-active': selectedMonth?.months === option.months }">
-                  {{ option.months }}
-                </VChip>
-                <div class="renting-sdk-dot" :class="{ 'renting-sdk-dot-active': selectedMonth?.months === option.months }" />
-              </div>
-            </template>
-          </VChipGroup>
+      <div class="renting-sdk-duration-selector">
+        <div class="renting-sdk-duration-title">
+          <h3>Elige la duración de tu renting (en meses):</h3>
         </div>
 
-        <div class="renting-sdk-price-section">
-          <div class="renting-sdk-price-amount">{{ currentPrice }} €</div>
-          <div class="renting-sdk-price-details">
-            al mes durante <span class="renting-sdk-highlight">{{ currentMonths }} meses</span>. Impuestos incluidos
+        <div class="renting-sdk-content-wrapper">
+          <div class="renting-sdk-months-container">
+            <VChipGroup v-model="selectedMonth" class="renting-sdk-months-chip-group" mandatory>
+              <template v-for="(option, i) in chipOptions" :key="i">
+                <div class="renting-sdk-chip-wrapper">
+                  <VChip :value="option" class="renting-sdk-month-chip"
+                    :class="{ 'renting-sdk-chip-active': selectedMonth?.months === option.months }">
+                    {{ option.months }}
+                  </VChip>
+                  <div class="renting-sdk-dot"
+                    :class="{ 'renting-sdk-dot-active': selectedMonth?.months === option.months }" />
+                </div>
+              </template>
+            </VChipGroup>
           </div>
-          <a href="#" class="renting-sdk-conditions-link">
-            Ver condiciones del producto ↗
-          </a>
+
+          <div class="renting-sdk-price-section">
+            <div class="renting-sdk-price-amount">{{ currentPrice }} €</div>
+            <div class="renting-sdk-price-details">
+              al mes durante <span class="renting-sdk-highlight">{{ currentMonths }} meses</span>. Impuestos incluidos
+            </div>
+            <a href="#" class="renting-sdk-conditions-link">
+              Ver condiciones del producto ↗
+            </a>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
+
+    <template v-else>
+      <div class="renting-sdk-no-options">
+        <p>No hay opciones de renting para este producto.</p>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -78,6 +88,7 @@ const particularInstallments = ref([])
 
 const showEmpresa = ref(false)
 const showParticular = ref(false)
+const showProduct = ref(false)
 
 const chipOptions = computed(() => {
   if (customerType.value === 'empresa' && calculatedInstallments.value.length) {
@@ -115,7 +126,7 @@ const currentMonths = computed(() => {
 const selectedProduct = computed(() => {
   return {
     [props.category]: {
-      price: 2000,
+      price: props.price,
       quantity: 1,
       packType: "basic"
     }
@@ -123,8 +134,7 @@ const selectedProduct = computed(() => {
 })
 
 const fetchParticularData = async () => {
-  // const sku = props.sku
-  const sku = 10860860
+  const sku = props.sku
   const moduleNames = Object.keys(store.state || {})
   let moduleName = null
 
@@ -134,41 +144,44 @@ const fetchParticularData = async () => {
       break
     }
   }
-
   if (moduleName) {
     try {
       const productSkuData = await store.dispatch(`${moduleName}/getMarketProductSku`, sku)
-
       if (productSkuData?.data) {
-        const { activeb2b, activeb2c } = productSkuData.data
+        const { active: isActive, activeb2b, activeb2c } = productSkuData.data
+        showProduct.value = !!isActive
         showEmpresa.value = !!activeb2b
         showParticular.value = !!activeb2c
+
         if (activeb2b && !activeb2c) {
           customerType.value = 'empresa'
         } else if (!activeb2b && activeb2c) {
           customerType.value = 'particular'
         }
       }
-      const response = await store.dispatch(`${moduleName}/getMarketProductsBySku`, sku)
+      if (showParticular.value) {
+        const response = await store.dispatch(`${moduleName}/getMarketProductsBySku`, sku)
+        const productData = response?.data?.['hydra:member']?.[0]
 
-      const productData = response?.data?.['hydra:member']?.[0]
-      if (productData?.installment?.length) {
-        const flatInstallments = productData.installment.flat()
-        particularInstallments.value = flatInstallments.map(i => ({
-          months: i.months,
-          priceParticular: i.installment,
-          type: 'dynamic'
-        }))
-        selectedMonth.value = particularInstallments.value.at(-1)
-      } else {
-        particularInstallments.value = []
-        selectedMonth.value = null
+        if (productData?.installment?.length) {
+          const flatInstallments = productData.installment.flat()
+          particularInstallments.value = flatInstallments.map(i => ({
+            months: i.months,
+            priceParticular: i.installment,
+            type: 'dynamic'
+          }))
+          selectedMonth.value = particularInstallments.value.at(-1)
+        } else {
+          particularInstallments.value = []
+          selectedMonth.value = null
+        }
       }
     } catch (e) {
       console.error('Error fetching market product data:', e)
     }
   }
 }
+
 
 watch(customerType, async (newType) => {
   const moduleNames = Object.keys(store.state || {})
@@ -208,7 +221,6 @@ watch(customerType, async (newType) => {
 </script>
 
 <style scoped>
-
 .renting-sdk-container :deep(.v-chip--variant-tonal .v-chip__underlay:not(.v-chip--selected)) {
   background-color: transparent !important;
 }
@@ -255,9 +267,17 @@ watch(customerType, async (newType) => {
   background: #ff6b35 !important;
   color: white !important;
 }
+
 @media only screen and (max-width: 370px) {
   .renting-sdk-container :deep(span.v-chip.v-chip--clickable.v-chip--no-color.v-theme--light.v-size--default) {
     margin: auto 6px 6px 0 !important;
   }
+}
+
+.renting-sdk-no-options {
+  text-align: center;
+  padding: 20px;
+  font-size: 16px;
+  color: #666;
 }
 </style>
