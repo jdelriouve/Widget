@@ -1,6 +1,11 @@
 <template>
   <div class="renting-sdk-container">
-    <template v-if="(showEmpresa || showParticular) && showProduct">
+    <template v-if="isFirstLoad">
+      <div class="renting-sdk-initial-loader">
+        <div class="spinner"></div>
+      </div>
+    </template>
+    <template v-else-if="(showEmpresa || showParticular) && showProduct">
       <div class="renting-sdk-customer-type-toggle">
         <div class="renting-sdk-toggle-wrapper" :class="{ 'renting-sdk-single': !showEmpresa || !showParticular }">
           <template v-if="showEmpresa && showParticular">
@@ -52,6 +57,10 @@
             </a>
           </div>
         </div>
+        <div v-if="isLoading" class="renting-sdk-overlay">
+          <div class="spinner"></div>
+        </div>
+
       </div>
     </template>
 
@@ -89,6 +98,10 @@ const particularInstallments = ref([])
 const showEmpresa = ref(false)
 const showParticular = ref(false)
 const showProduct = ref(false)
+
+const isLoading = ref(true)
+
+const isFirstLoad = ref(true)
 
 const chipOptions = computed(() => {
   if (customerType.value === 'empresa' && calculatedInstallments.value.length) {
@@ -146,18 +159,17 @@ const fetchParticularData = async () => {
   }
   if (moduleName) {
     try {
+      isLoading.value = true
       const productSkuData = await store.dispatch(`${moduleName}/getMarketProductSku`, sku)
+
       if (productSkuData?.data) {
         const { active: isActive, activeb2b, activeb2c } = productSkuData.data
         showProduct.value = !!isActive
         showEmpresa.value = !!activeb2b
         showParticular.value = !!activeb2c
 
-        if (activeb2b && !activeb2c) {
-          customerType.value = 'empresa'
-        } else if (!activeb2b && activeb2c) {
-          customerType.value = 'particular'
-        }
+        if (activeb2b && !activeb2c) customerType.value = 'empresa'
+        else if (!activeb2b && activeb2c) customerType.value = 'particular'
       }
       if (showParticular.value) {
         const response = await store.dispatch(`${moduleName}/getMarketProductsBySku`, sku)
@@ -178,12 +190,15 @@ const fetchParticularData = async () => {
       }
     } catch (e) {
       console.error('Error fetching market product data:', e)
+    } finally {
+      isLoading.value = false
+      isFirstLoad.value = false
     }
   }
 }
 
-
 watch(customerType, async (newType) => {
+  isLoading.value = true
   const moduleNames = Object.keys(store.state || {})
   let moduleName = null
 
@@ -212,6 +227,8 @@ watch(customerType, async (newType) => {
       }
     } catch (error) {
       selectedMonth.value = null
+    } finally {
+      isLoading.value = false
     }
   } else {
     selectedMonth.value = null
@@ -280,4 +297,44 @@ watch(customerType, async (newType) => {
   font-size: 16px;
   color: #666;
 }
+.renting-sdk-duration-selector {
+  position: relative;
+}
+.renting-sdk-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+}
+.renting-sdk-initial-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #ccc;
+  border-top: 4px solid #ff6b35;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+
+
 </style>
