@@ -43,7 +43,7 @@ window.widget = sdk
 if (process.env.NODE_ENV === 'development') {
   mount({
     sku: '10860860',
-    price: 2500,
+    price:1000,
     packType: 'basic',
     selector: '#app',
     onLoaded: () => console.log('🔧 Widget montado automáticamente en desarrollo'),

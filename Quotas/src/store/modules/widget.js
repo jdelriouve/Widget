@@ -37,8 +37,14 @@ const actions = {
           return error.response;
         }
       },
-      async getMarketProductsBySku({ commit }, data) {
-        let endPoint = "/api/v1/open-market-products?skuRetailer=" + data;
+      async getMarketProductsBySku({ commit }, payload) {
+        const { sku, price } = payload;
+        let endPoint = `/api/v1/open-market-products?skuRetailer=${sku}`;
+      
+        if (price !== undefined) {
+          endPoint += `&price=${price}`;
+        }
+      
         try {
           const response = await HTTP.get(endPoint);
           const isError = response instanceof Error;
@@ -51,7 +57,7 @@ const actions = {
         } catch (error) {
           return error.response;
         }
-      },
+      },      
       async postInstallments({ commit }, data) {
         let endPoint = 'api/v1/b2b-installments'
         try {

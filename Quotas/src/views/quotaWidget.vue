@@ -81,10 +81,7 @@ const props = defineProps({
   sku: String,
   price: Number,
   packType: String,
-  category: {
-    type: String,
-    default: 'desktop'
-  }
+  category: String
 })
 
 const store = useStore()
@@ -100,8 +97,9 @@ const showParticular = ref(false)
 const showProduct = ref(false)
 
 const isLoading = ref(true)
-
 const isFirstLoad = ref(true)
+
+const productCategory = ref(props.category)
 
 const chipOptions = computed(() => {
   if (customerType.value === 'empresa' && calculatedInstallments.value.length) {
@@ -138,7 +136,7 @@ const currentMonths = computed(() => {
 
 const selectedProduct = computed(() => {
   return {
-    [props.category]: {
+    [productCategory.value.toLowerCase()]: {
       price: props.price,
       quantity: 1,
       packType: "basic"
@@ -163,7 +161,12 @@ const fetchParticularData = async () => {
       const productSkuData = await store.dispatch(`${moduleName}/getMarketProductSku`, sku)
 
       if (productSkuData?.data) {
-        const { active: isActive, activeb2b, activeb2c } = productSkuData.data
+        const { active: isActive, activeb2b, activeb2c, product } = productSkuData.data
+
+        if (product?.family) {
+          productCategory.value = product.family
+        }
+
         showProduct.value = !!isActive
         showEmpresa.value = !!activeb2b
         showParticular.value = !!activeb2c
@@ -172,7 +175,10 @@ const fetchParticularData = async () => {
         else if (!activeb2b && activeb2c) customerType.value = 'particular'
       }
       if (showParticular.value) {
-        const response = await store.dispatch(`${moduleName}/getMarketProductsBySku`, sku)
+        const response = await store.dispatch(`${moduleName}/getMarketProductsBySku`, {
+          sku,
+          price: props.price
+        })
         const productData = response?.data?.['hydra:member']?.[0]
 
         if (productData?.installment?.length) {
@@ -297,9 +303,11 @@ watch(customerType, async (newType) => {
   font-size: 16px;
   color: #666;
 }
+
 .renting-sdk-duration-selector {
   position: relative;
 }
+
 .renting-sdk-overlay {
   position: absolute;
   top: 0;
@@ -313,6 +321,7 @@ watch(customerType, async (newType) => {
   align-items: center;
   border-radius: 12px;
 }
+
 .renting-sdk-initial-loader {
   display: flex;
   justify-content: center;
@@ -330,11 +339,12 @@ watch(customerType, async (newType) => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
-
-
-
-
 </style>
